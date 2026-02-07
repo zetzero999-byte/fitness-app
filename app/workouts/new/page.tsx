@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import { Plus, ArrowLeft, Calendar, FileText, Trash2, Save, X, Loader2, Activity } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 interface Exercise {
   id: string
@@ -85,7 +86,6 @@ export default function NewWorkout() {
     setSuccess(false)
 
     try {
-      // สร้าง workout
       const { data: workout, error: workoutError } = await supabase
         .from('workouts')
         .insert({
@@ -98,7 +98,6 @@ export default function NewWorkout() {
 
       if (workoutError) throw workoutError
 
-      // สร้าง workout exercises
       if (workoutExercises.length > 0) {
         const exercisesToInsert = workoutExercises
           .filter((we) => we.exercise_id)
@@ -135,7 +134,10 @@ export default function NewWorkout() {
   if (loading) {
     return (
       <div className="container">
-        <div className="loading">กำลังโหลด...</div>
+        <div className="loading flex items-center justify-center gap-2">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          กำลังโหลด...
+        </div>
       </div>
     )
   }
@@ -143,20 +145,33 @@ export default function NewWorkout() {
   return (
     <div className="container">
       <div className="header">
-        <h1>➕ เพิ่ม Workout ใหม่</h1>
+        <h1 className="flex items-center justify-center gap-3">
+          <Plus className="w-8 h-8 md:w-10 md:h-10" />
+          เพิ่ม Workout ใหม่
+        </h1>
       </div>
 
-      <Link href="/" style={{ display: 'inline-block', marginBottom: '20px', color: '#667eea' }}>
-        ← กลับหน้าหลัก
+      <Link href="/" className="back-link flex items-center gap-2">
+        <ArrowLeft className="w-4 h-4" />
+        กลับหน้าหลัก
       </Link>
 
-      {error && <div className="error">เกิดข้อผิดพลาด: {error}</div>}
-      {success && <div className="success">บันทึกสำเร็จ! กำลังกลับไปหน้าหลัก...</div>}
+      {error && (
+        <div className="error">
+          <strong>เกิดข้อผิดพลาด:</strong> {error}
+        </div>
+      )}
+      {success && (
+        <div className="success">
+          <strong>บันทึกสำเร็จ!</strong> กำลังกลับไปหน้าหลัก...
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>ชื่อ Workout *</label>
+          <label htmlFor="workout-name">ชื่อ Workout *</label>
           <input
+            id="workout-name"
             type="text"
             value={workoutName}
             onChange={(e) => setWorkoutName(e.target.value)}
@@ -166,18 +181,27 @@ export default function NewWorkout() {
         </div>
 
         <div className="form-group">
-          <label>วันที่ *</label>
+          <label htmlFor="workout-date" className="flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
+            วันที่ *
+          </label>
           <input
+            id="workout-date"
             type="date"
             value={workoutDate}
             onChange={(e) => setWorkoutDate(e.target.value)}
             required
+            aria-label="เลือกวันที่ออกกำลังกาย"
           />
         </div>
 
         <div className="form-group">
-          <label>หมายเหตุ</label>
+          <label htmlFor="workout-notes" className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            หมายเหตุ
+          </label>
           <textarea
+            id="workout-notes"
             value={workoutNotes}
             onChange={(e) => setWorkoutNotes(e.target.value)}
             rows={3}
@@ -185,115 +209,147 @@ export default function NewWorkout() {
           />
         </div>
 
-        <div style={{ marginTop: '30px', marginBottom: '20px' }}>
-          <h3 style={{ marginBottom: '15px', color: '#333' }}>แบบฝึกหัด</h3>
+        <div className="mt-8 mb-6">
+          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <Activity className="w-5 h-5" />
+            แบบฝึกหัด
+          </h3>
           {workoutExercises.length === 0 ? (
-            <p style={{ color: '#999', marginBottom: '15px' }}>ยังไม่มีแบบฝึกหัด</p>
+            <p className="text-gray-500 mb-4">ยังไม่มีแบบฝึกหัด</p>
           ) : (
-            workoutExercises.map((exercise, index) => (
-              <div key={index} className="card" style={{ marginBottom: '15px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                  <h4 style={{ color: '#333' }}>แบบฝึกหัด #{index + 1}</h4>
-                  <button
-                    type="button"
-                    onClick={() => removeExercise(index)}
-                    className="button button-danger"
-                    style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-                  >
-                    ลบ
-                  </button>
-                </div>
-
-                <div className="form-group">
-                  <label>แบบฝึกหัด *</label>
-                  <select
-                    value={exercise.exercise_id}
-                    onChange={(e) => updateExercise(index, 'exercise_id', e.target.value)}
-                    required
-                  >
-                    <option value="">เลือกแบบฝึกหัด</option>
-                    {exercises.map((ex) => (
-                      <option key={ex.id} value={ex.id}>
-                        {ex.name} {ex.muscle_group ? `(${ex.muscle_group})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                  <div className="form-group">
-                    <label>จำนวนเซ็ต</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={exercise.sets}
-                      onChange={(e) => updateExercise(index, 'sets', parseInt(e.target.value) || 1)}
-                    />
+            <div className="space-y-4">
+              {workoutExercises.map((exercise, index) => (
+                <div key={index} className="card">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-lg font-semibold text-gray-800">แบบฝึกหัด #{index + 1}</h4>
+                    <button
+                      type="button"
+                      onClick={() => removeExercise(index)}
+                      className="button button-danger flex items-center gap-2 px-3 py-2 text-sm"
+                      aria-label={`ลบแบบฝึกหัด ${index + 1}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      ลบ
+                    </button>
                   </div>
 
                   <div className="form-group">
-                    <label>จำนวนครั้ง (Reps)</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={exercise.reps || ''}
-                      onChange={(e) => updateExercise(index, 'reps', e.target.value ? parseInt(e.target.value) : null)}
-                      placeholder="เช่น 12"
-                    />
+                    <label htmlFor={`exercise-${index}`}>แบบฝึกหัด *</label>
+                    <select
+                      id={`exercise-${index}`}
+                      value={exercise.exercise_id}
+                      onChange={(e) => updateExercise(index, 'exercise_id', e.target.value)}
+                      required
+                      aria-label={`เลือกแบบฝึกหัด ${index + 1}`}
+                    >
+                      <option value="">เลือกแบบฝึกหัด</option>
+                      {exercises.map((ex) => (
+                        <option key={ex.id} value={ex.id}>
+                          {ex.name} {ex.muscle_group ? `(${ex.muscle_group})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="form-group">
+                      <label htmlFor={`sets-${index}`}>จำนวนเซ็ต</label>
+                      <input
+                        id={`sets-${index}`}
+                        type="number"
+                        min="1"
+                        value={exercise.sets}
+                        onChange={(e) => updateExercise(index, 'sets', parseInt(e.target.value) || 1)}
+                        placeholder="เช่น 3"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor={`reps-${index}`}>จำนวนครั้ง (Reps)</label>
+                      <input
+                        id={`reps-${index}`}
+                        type="number"
+                        min="1"
+                        value={exercise.reps || ''}
+                        onChange={(e) => updateExercise(index, 'reps', e.target.value ? parseInt(e.target.value) : null)}
+                        placeholder="เช่น 12"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor={`weight-${index}`}>น้ำหนัก (กก.)</label>
+                      <input
+                        id={`weight-${index}`}
+                        type="number"
+                        step="0.5"
+                        min="0"
+                        value={exercise.weight_kg || ''}
+                        onChange={(e) => updateExercise(index, 'weight_kg', e.target.value ? parseFloat(e.target.value) : null)}
+                        placeholder="เช่น 20"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor={`duration-${index}`}>ระยะเวลา (นาที)</label>
+                      <input
+                        id={`duration-${index}`}
+                        type="number"
+                        min="1"
+                        value={exercise.duration_minutes || ''}
+                        onChange={(e) => updateExercise(index, 'duration_minutes', e.target.value ? parseInt(e.target.value) : null)}
+                        placeholder="เช่น 30"
+                      />
+                    </div>
                   </div>
 
                   <div className="form-group">
-                    <label>น้ำหนัก (กก.)</label>
+                    <label htmlFor={`notes-${index}`}>หมายเหตุ</label>
                     <input
-                      type="number"
-                      step="0.5"
-                      min="0"
-                      value={exercise.weight_kg || ''}
-                      onChange={(e) => updateExercise(index, 'weight_kg', e.target.value ? parseFloat(e.target.value) : null)}
-                      placeholder="เช่น 20"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>ระยะเวลา (นาที)</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={exercise.duration_minutes || ''}
-                      onChange={(e) => updateExercise(index, 'duration_minutes', e.target.value ? parseInt(e.target.value) : null)}
-                      placeholder="เช่น 30"
+                      id={`notes-${index}`}
+                      type="text"
+                      value={exercise.notes || ''}
+                      onChange={(e) => updateExercise(index, 'notes', e.target.value || null)}
+                      placeholder="หมายเหตุเพิ่มเติม..."
                     />
                   </div>
                 </div>
-
-                <div className="form-group">
-                  <label>หมายเหตุ</label>
-                  <input
-                    type="text"
-                    value={exercise.notes || ''}
-                    onChange={(e) => updateExercise(index, 'notes', e.target.value || null)}
-                    placeholder="หมายเหตุเพิ่มเติม..."
-                  />
-                </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
 
           <button
             type="button"
             onClick={addExercise}
-            className="button button-secondary"
-            style={{ width: '100%', marginTop: '10px' }}
+            className="button button-secondary flex items-center gap-2 w-full mt-4"
           >
-            ➕ เพิ่มแบบฝึกหัด
+            <Plus className="w-5 h-5" />
+            เพิ่มแบบฝึกหัด
           </button>
         </div>
 
-        <div className="actions">
-          <button type="submit" className="button" disabled={saving}>
-            {saving ? 'กำลังบันทึก...' : '💾 บันทึก Workout'}
+        <div className="flex flex-col md:flex-row gap-3 mt-8">
+          <button 
+            type="submit" 
+            className="button flex items-center justify-center gap-2 flex-1" 
+            disabled={saving}
+          >
+            {saving ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                กำลังบันทึก...
+              </>
+            ) : (
+              <>
+                <Save className="w-5 h-5" />
+                บันทึก Workout
+              </>
+            )}
           </button>
-          <Link href="/" className="button button-secondary" style={{ textAlign: 'center' }}>
+          <Link 
+            href="/" 
+            className="button button-secondary flex items-center justify-center gap-2 flex-1"
+          >
+            <X className="w-5 h-5" />
             ยกเลิก
           </Link>
         </div>

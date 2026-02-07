@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { PartyPopper, Calendar, MessageSquare, TrendingUp, RotateCcw, Home, Dumbbell } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 export default function WorkoutComplete() {
@@ -31,17 +32,22 @@ export default function WorkoutComplete() {
   }
 
   return (
-    <div className="container" style={{ maxWidth: '600px', textAlign: 'center' }}>
-      <div style={{ fontSize: '5rem', marginBottom: '20px' }}>🎉</div>
-      <h1 style={{ color: '#333', marginBottom: '10px' }}>ยินดีด้วย!</h1>
-      <h2 style={{ color: '#667eea', marginBottom: '30px' }}>
-        คุณออกกำลังกายเสร็จแล้ว
-      </h2>
+    <div className="container max-w-2xl text-center">
+      <div className="mb-8">
+        <PartyPopper className="w-20 h-20 mx-auto mb-6 text-yellow-500" />
+        <h1 className="text-4xl font-bold text-gray-800 mb-3">ยินดีด้วย!</h1>
+        <h2 className="text-2xl text-primary-600 font-semibold">
+          คุณออกกำลังกายเสร็จแล้ว
+        </h2>
+      </div>
 
       {todayLog && (
-        <div className="card" style={{ marginBottom: '30px', textAlign: 'left' }}>
-          <h3 style={{ marginBottom: '15px', color: '#333' }}>📅 บันทึกวันนี้</h3>
-          <div style={{ color: '#666', marginBottom: '10px' }}>
+        <div className="card mb-8 text-left">
+          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            บันทึกวันนี้
+          </h3>
+          <div className="text-gray-600 mb-3">
             <strong>วันที่:</strong> {new Date(todayLog.date).toLocaleDateString('th-TH', {
               year: 'numeric',
               month: 'long',
@@ -50,46 +56,45 @@ export default function WorkoutComplete() {
             })}
           </div>
           {todayLog.notes && (
-            <div style={{ color: '#666' }}>
-              <strong>หมายเหตุ:</strong> {todayLog.notes}
+            <div className="text-gray-600 flex items-start gap-2">
+              <MessageSquare className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div>
+                <strong>หมายเหตุ:</strong> {todayLog.notes}
+              </div>
             </div>
           )}
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-        <Link href="/daily-log" className="button" style={{ 
-          background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-          textAlign: 'center',
-          textDecoration: 'none'
-        }}>
-          📊 ดูประวัติการออกกำลังกาย
+      <div className="space-y-3 mb-8">
+        <Link 
+          href="/daily-log" 
+          className="button bg-gradient-to-r from-teal-500 to-green-500 flex items-center justify-center gap-2 w-full"
+        >
+          <TrendingUp className="w-5 h-5" />
+          ดูประวัติการออกกำลังกาย
         </Link>
         
-        <Link href="/workout" className="button" style={{ 
-          textAlign: 'center',
-          textDecoration: 'none'
-        }}>
-          🔄 ออกกำลังกายอีกครั้ง
+        <Link 
+          href="/workout" 
+          className="button flex items-center justify-center gap-2 w-full"
+        >
+          <RotateCcw className="w-5 h-5" />
+          ออกกำลังกายอีกครั้ง
         </Link>
 
-        <Link href="/" className="button button-secondary" style={{ 
-          textAlign: 'center',
-          textDecoration: 'none'
-        }}>
-          🏠 กลับหน้าหลัก
+        <Link 
+          href="/" 
+          className="button button-secondary flex items-center justify-center gap-2 w-full"
+        >
+          <Home className="w-5 h-5" />
+          กลับหน้าหลัก
         </Link>
       </div>
 
-      <div style={{ 
-        marginTop: '40px', 
-        padding: '20px', 
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
-        borderRadius: '12px',
-        color: 'white'
-      }}>
-        <div style={{ fontSize: '1.2rem', marginBottom: '10px' }}>💪</div>
-        <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>
+      <div className="p-6 bg-gradient-to-r from-primary-500 to-primary-700 rounded-xl text-white">
+        <Dumbbell className="w-12 h-12 mx-auto mb-4" />
+        <div className="text-sm opacity-90">
           การออกกำลังกายสม่ำเสมอจะช่วยให้คุณมีสุขภาพที่ดีขึ้น!
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { ClipboardList, ArrowLeft, Plus, Edit, Trash2, Target, PlayCircle, Save, X, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 interface Exercise {
@@ -20,6 +21,7 @@ export default function WorkoutPlan() {
   const [error, setError] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -54,6 +56,7 @@ export default function WorkoutPlan() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setSaving(true)
 
     try {
       if (editingId) {
@@ -91,6 +94,8 @@ export default function WorkoutPlan() {
       fetchExercises()
     } catch (err: any) {
       setError(err.message)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -132,24 +137,36 @@ export default function WorkoutPlan() {
   return (
     <div className="container">
       <div className="header">
-        <h1>📋 ตารางออกกำลังกาย</h1>
+        <h1 className="flex items-center justify-center gap-3">
+          <ClipboardList className="w-8 h-8 md:w-10 md:h-10" />
+          ตารางออกกำลังกาย
+        </h1>
         <p>ท่าออกกำลังกายทั้งหมด</p>
       </div>
 
-      <Link href="/" style={{ display: 'inline-block', marginBottom: '20px', color: '#667eea' }}>
-        ← กลับหน้าหลัก
+      <Link href="/" className="back-link flex items-center gap-2">
+        <ArrowLeft className="w-4 h-4" />
+        กลับหน้าหลัก
       </Link>
 
-      {error && <div className="error">เกิดข้อผิดพลาด: {error}</div>}
+      {error && (
+        <div className="error">
+          <strong>เกิดข้อผิดพลาด:</strong> {error}
+        </div>
+      )}
 
-      <div style={{ marginBottom: '20px' }}>
+      <div className="mb-6">
         {!showAddForm ? (
-          <button onClick={() => setShowAddForm(true)} className="button">
-            ➕ เพิ่มท่าออกกำลังกาย
+          <button 
+            onClick={() => setShowAddForm(true)} 
+            className="button flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            เพิ่มท่าออกกำลังกาย
           </button>
         ) : (
           <div className="card">
-            <h3 style={{ marginBottom: '20px', color: '#333' }}>
+            <h3 className="text-xl font-bold text-gray-800 mb-6">
               {editingId ? 'แก้ไขท่าออกกำลังกาย' : 'เพิ่มท่าออกกำลังกายใหม่'}
             </h3>
             <form onSubmit={handleSubmit}>
@@ -164,9 +181,12 @@ export default function WorkoutPlan() {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="form-group">
-                  <label>กลุ่มกล้ามเนื้อ</label>
+                  <label className="flex items-center gap-2">
+                    <Target className="w-4 h-4" />
+                    กลุ่มกล้ามเนื้อ
+                  </label>
                   <input
                     type="text"
                     value={formData.muscle_group}
@@ -197,7 +217,10 @@ export default function WorkoutPlan() {
               </div>
 
               <div className="form-group">
-                <label>ลิงก์วิดีโอ YouTube</label>
+                <label className="flex items-center gap-2">
+                  <PlayCircle className="w-4 h-4" />
+                  ลิงก์วิดีโอ YouTube
+                </label>
                 <input
                   type="url"
                   value={formData.video_url}
@@ -216,11 +239,30 @@ export default function WorkoutPlan() {
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="submit" className="button">
-                  {editingId ? '💾 บันทึกการแก้ไข' : '💾 บันทึก'}
+              <div className="flex gap-3">
+                <button 
+                  type="submit" 
+                  className="button flex items-center gap-2"
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      กำลังบันทึก...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      {editingId ? 'บันทึกการแก้ไข' : 'บันทึก'}
+                    </>
+                  )}
                 </button>
-                <button type="button" onClick={cancelForm} className="button button-secondary">
+                <button 
+                  type="button" 
+                  onClick={cancelForm} 
+                  className="button button-secondary flex items-center gap-2"
+                >
+                  <X className="w-4 h-4" />
                   ยกเลิก
                 </button>
               </div>
@@ -230,110 +272,95 @@ export default function WorkoutPlan() {
       </div>
 
       <div>
-        <h2 style={{ marginBottom: '20px', color: '#333' }}>
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">
           ท่าออกกำลังกายทั้งหมด ({exercises.length})
         </h2>
 
         {loading ? (
-          <div className="loading">กำลังโหลด...</div>
+          <div className="loading flex items-center justify-center gap-2">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            กำลังโหลด...
+          </div>
         ) : exercises.length === 0 ? (
           <div className="empty-state">
+            <ClipboardList className="w-16 h-16 mx-auto mb-4 text-gray-400" />
             <h3>ยังไม่มีท่าออกกำลังกาย</h3>
-            <p>เริ่มต้นด้วยการเพิ่มท่าออกกำลังกายแรกของคุณ หรือรัน seed data จากไฟล์ supabase-seed-data.sql</p>
+            <p>เริ่มต้นด้วยการเพิ่มท่าออกกำลังกายแรกของคุณ</p>
           </div>
         ) : (
-          exercises.map((exercise, index) => (
-            <div key={exercise.id} className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                    <span style={{ 
-                      background: '#667eea', 
-                      color: 'white', 
-                      borderRadius: '50%', 
-                      width: '30px', 
-                      height: '30px', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center',
-                      fontWeight: 'bold',
-                      fontSize: '0.9rem'
-                    }}>
-                      {index + 1}
-                    </span>
-                    <h3 style={{ margin: 0, color: '#333', fontSize: '1.3rem' }}>{exercise.name}</h3>
+          <div className="space-y-4">
+            {exercises.map((exercise, index) => (
+              <div key={exercise.id} className="card">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-8 h-8 rounded-full bg-primary-500 text-white flex items-center justify-center font-bold text-sm">
+                        {index + 1}
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-800">{exercise.name}</h3>
+                    </div>
+                    
+                    {exercise.muscle_group && (
+                      <div className="flex items-center gap-2 text-primary-600 font-semibold mb-2">
+                        <Target className="w-4 h-4" />
+                        {exercise.muscle_group}
+                      </div>
+                    )}
+                    
+                    {exercise.reps_target && (
+                      <div className="text-gray-600 mb-2">
+                        <strong>จำนวน:</strong> {exercise.reps_target}
+                      </div>
+                    )}
                   </div>
                   
-                  {exercise.muscle_group && (
-                    <div style={{ color: '#667eea', marginBottom: '8px', fontWeight: '600' }}>
-                      🎯 {exercise.muscle_group}
-                    </div>
-                  )}
-                  
-                  {exercise.reps_target && (
-                    <div style={{ color: '#666', marginBottom: '8px', fontSize: '1rem' }}>
-                      <strong>จำนวน:</strong> {exercise.reps_target}
-                    </div>
-                  )}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(exercise)}
+                      className="button button-secondary flex items-center gap-2 px-4 py-2 text-sm"
+                    >
+                      <Edit className="w-4 h-4" />
+                      แก้ไข
+                    </button>
+                    <button
+                      onClick={() => handleDelete(exercise.id)}
+                      className="button button-danger flex items-center gap-2 px-4 py-2 text-sm"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      ลบ
+                    </button>
+                  </div>
                 </div>
-                
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button
-                    onClick={() => handleEdit(exercise)}
-                    className="button button-secondary"
-                    style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-                  >
-                    แก้ไข
-                  </button>
-                  <button
-                    onClick={() => handleDelete(exercise.id)}
-                    className="button button-danger"
-                    style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-                  >
-                    ลบ
-                  </button>
-                </div>
+
+                {exercise.instructions && (
+                  <div className="bg-gray-50 p-4 rounded-lg mb-3 border-l-4 border-primary-500">
+                    <div className="font-semibold text-gray-800 mb-2">วิธีการทำ:</div>
+                    <div className="text-gray-600 whitespace-pre-line">{exercise.instructions}</div>
+                  </div>
+                )}
+
+                {exercise.video_url && (
+                  <div className="mb-3">
+                    <a 
+                      href={exercise.video_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary-600 hover:text-primary-700 inline-flex items-center gap-2 font-medium transition-colors"
+                    >
+                      <PlayCircle className="w-5 h-5" />
+                      ดูวิดีโอสอน
+                    </a>
+                  </div>
+                )}
+
+                {exercise.description && (
+                  <div className="text-gray-500 text-sm italic mt-3">
+                    {exercise.description}
+                  </div>
+                )}
               </div>
-
-              {exercise.instructions && (
-                <div style={{ 
-                  background: '#f8f9fa', 
-                  padding: '15px', 
-                  borderRadius: '8px', 
-                  marginBottom: '10px',
-                  borderLeft: '4px solid #667eea'
-                }}>
-                  <div style={{ fontWeight: '600', marginBottom: '8px', color: '#333' }}>วิธีการทำ:</div>
-                  <div style={{ color: '#666', whiteSpace: 'pre-line' }}>{exercise.instructions}</div>
-                </div>
-              )}
-
-              {exercise.video_url && (
-                <div style={{ marginBottom: '10px' }}>
-                  <a 
-                    href={exercise.video_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    style={{ 
-                      color: '#667eea', 
-                      textDecoration: 'none',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '5px'
-                    }}
-                  >
-                    ▶️ ดูวิดีโอสอน
-                  </a>
-                </div>
-              )}
-
-              {exercise.description && (
-                <div style={{ color: '#999', fontSize: '0.9rem', fontStyle: 'italic', marginTop: '10px' }}>
-                  {exercise.description}
-                </div>
-              )}
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
     </div>

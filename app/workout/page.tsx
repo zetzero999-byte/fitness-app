@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Activity, X, CheckCircle2, Target, PlayCircle, FileText, ChevronLeft, ChevronRight, SkipForward, Loader2, ArrowLeft } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 interface Exercise {
@@ -36,10 +37,9 @@ export default function Workout() {
         .from('exercises')
         .select('*')
         .order('created_at')
-        .limit(20) // จำกัด 20 ท่า
+        .limit(20)
 
       if (error) throw error
-      // กรองท่าที่ไม่ใช่การพัก (ถ้าต้องการ)
       const filtered = (data || []).filter(ex => ex.name !== 'พักดื่มน้ำ / หายใจลึกๆ')
       setExercises(filtered)
     } catch (err: any) {
@@ -60,7 +60,6 @@ export default function Workout() {
     if (currentIndex < exercises.length - 1) {
       setCurrentIndex(currentIndex + 1)
     } else {
-      // จบทุกท่าแล้ว - บันทึกรายวัน
       handleComplete()
     }
   }
@@ -81,9 +80,8 @@ export default function Workout() {
 
     try {
       const today = new Date().toISOString().split('T')[0]
-      const duration = Math.round((new Date().getTime() - startTime.getTime()) / 1000 / 60) // นาที
+      const duration = Math.round((new Date().getTime() - startTime.getTime()) / 1000 / 60)
 
-      // บันทึกรายวัน
       const { error: logError } = await supabase
         .from('daily_logs')
         .upsert({
@@ -95,8 +93,6 @@ export default function Workout() {
         })
 
       if (logError) throw logError
-
-      // ไปหน้าสรุป
       router.push('/workout/complete')
     } catch (err: any) {
       setError(err.message)
@@ -106,17 +102,20 @@ export default function Workout() {
 
   if (loading) {
     return (
-      <div className="container">
-        <div className="loading">กำลังโหลดท่าออกกำลังกาย...</div>
+      <div className="container max-w-4xl">
+        <div className="loading flex items-center justify-center gap-2">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          กำลังโหลดท่าออกกำลังกาย...
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="container">
+      <div className="container max-w-4xl">
         <div className="error">เกิดข้อผิดพลาด: {error}</div>
-        <Link href="/" className="button" style={{ display: 'inline-block', marginTop: '20px' }}>
+        <Link href="/" className="button inline-block mt-5">
           กลับหน้าหลัก
         </Link>
       </div>
@@ -125,11 +124,12 @@ export default function Workout() {
 
   if (exercises.length === 0) {
     return (
-      <div className="container">
+      <div className="container max-w-4xl">
         <div className="empty-state">
+          <Activity className="w-16 h-16 mx-auto mb-4 text-gray-400" />
           <h3>ยังไม่มีท่าออกกำลังกาย</h3>
           <p>ไปเพิ่มท่าออกกำลังกายก่อนที่หน้า ตารางออกกำลังกาย</p>
-          <Link href="/workout-plan" className="button" style={{ display: 'inline-block', marginTop: '20px' }}>
+          <Link href="/workout-plan" className="button inline-block mt-5">
             ไปที่ตารางออกกำลังกาย
           </Link>
         </div>
@@ -143,215 +143,166 @@ export default function Workout() {
   const isLast = currentIndex === exercises.length - 1
 
   return (
-    <div className="container" style={{ maxWidth: '800px' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '30px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h1 style={{ margin: 0, color: '#333' }}>💪 ออกกำลังกาย</h1>
-          <Link href="/" style={{ color: '#667eea', textDecoration: 'none' }}>
-            ✕ ยกเลิก
+    <div className="container max-w-4xl">
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-5">
+          <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
+            <Activity className="w-8 h-8" />
+            ออกกำลังกาย
+          </h1>
+          <Link href="/" className="text-primary-600 hover:text-primary-700 transition-colors">
+            <X className="w-6 h-6" />
           </Link>
         </div>
         
-        {/* Progress Bar */}
-        <div style={{ 
-          background: '#e0e0e0', 
-          borderRadius: '10px', 
-          height: '20px', 
-          marginBottom: '10px',
-          overflow: 'hidden'
-        }}>
-          <div style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            height: '100%',
-            width: `${progress}%`,
-            transition: 'width 0.3s ease',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: '0.8rem',
-            fontWeight: '600'
-          }}>
+        <div className="bg-gray-200 rounded-full h-5 mb-3 overflow-hidden">
+          <div 
+            className="bg-gradient-to-r from-primary-500 to-primary-700 h-full flex items-center justify-center text-white text-sm font-semibold transition-all duration-300"
+            style={{ width: `${progress}%` } as React.CSSProperties}
+          >
             {currentIndex + 1}/{exercises.length}
           </div>
         </div>
-        <div style={{ textAlign: 'center', color: '#666', fontSize: '0.9rem' }}>
+        <div className="text-center text-gray-600 text-sm">
           ท่า {currentIndex + 1} จาก {exercises.length}
         </div>
       </div>
 
-      {/* Exercise Card */}
-      <div className="card" style={{ marginBottom: '30px', textAlign: 'center' }}>
-        <div style={{ 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
-          color: 'white', 
-          padding: '20px', 
-          borderRadius: '12px 12px 0 0',
-          margin: '-20px -20px 20px -20px'
-        }}>
-          <div style={{ fontSize: '3rem', marginBottom: '10px' }}>
-            {isCompleted ? '✅' : '🏋️'}
+      <div className="card mb-8 text-center">
+        <div className="bg-gradient-to-r from-primary-500 to-primary-700 text-white p-6 rounded-t-xl -m-6 mb-6">
+          <div className="text-5xl mb-3">
+            {isCompleted ? (
+              <CheckCircle2 className="w-16 h-16 mx-auto" />
+            ) : (
+              <Activity className="w-16 h-16 mx-auto" />
+            )}
           </div>
-          <h2 style={{ margin: 0, fontSize: '2rem', color: 'white' }}>
-            {currentExercise.name}
-          </h2>
+          <h2 className="text-3xl font-bold">{currentExercise.name}</h2>
         </div>
 
         {currentExercise.muscle_group && (
-          <div style={{ 
-            background: '#f0f0f0', 
-            padding: '10px', 
-            borderRadius: '8px', 
-            marginBottom: '20px',
-            color: '#667eea',
-            fontWeight: '600'
-          }}>
-            🎯 {currentExercise.muscle_group}
+          <div className="bg-gray-100 p-3 rounded-lg mb-5 text-primary-600 font-semibold flex items-center justify-center gap-2">
+            <Target className="w-5 h-5" />
+            {currentExercise.muscle_group}
           </div>
         )}
 
         {currentExercise.reps_target && (
-          <div style={{ 
-            fontSize: '1.5rem', 
-            fontWeight: 'bold', 
-            color: '#333', 
-            marginBottom: '20px',
-            padding: '15px',
-            background: '#fff3cd',
-            borderRadius: '8px'
-          }}>
+          <div className="text-2xl font-bold text-gray-800 mb-5 p-4 bg-yellow-50 rounded-lg">
             {currentExercise.reps_target}
           </div>
         )}
 
         {currentExercise.instructions && (
-          <div style={{ 
-            textAlign: 'left', 
-            background: '#f8f9fa', 
-            padding: '20px', 
-            borderRadius: '8px', 
-            marginBottom: '20px',
-            borderLeft: '4px solid #667eea'
-          }}>
-            <div style={{ fontWeight: '600', marginBottom: '10px', color: '#333' }}>
-              📝 วิธีการทำ:
+          <div className="text-left bg-gray-50 p-5 rounded-lg mb-5 border-l-4 border-primary-500">
+            <div className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              วิธีการทำ:
             </div>
-            <div style={{ color: '#666', whiteSpace: 'pre-line', lineHeight: '1.8' }}>
+            <div className="text-gray-600 whitespace-pre-line leading-relaxed">
               {currentExercise.instructions}
             </div>
           </div>
         )}
 
         {currentExercise.video_url && (
-          <div style={{ marginBottom: '20px' }}>
+          <div className="mb-5">
             <a 
               href={currentExercise.video_url} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="button"
-              style={{ 
-                display: 'inline-block',
-                textDecoration: 'none'
-              }}
+              className="button inline-flex items-center gap-2"
             >
-              ▶️ ดูวิดีโอสอน
+              <PlayCircle className="w-5 h-5" />
+              ดูวิดีโอสอน
             </a>
           </div>
         )}
 
         {isCompleted && (
-          <div style={{ 
-            background: '#d4edda', 
-            color: '#155724', 
-            padding: '15px', 
-            borderRadius: '8px',
-            marginBottom: '20px',
-            fontWeight: '600'
-          }}>
-            ✅ ทำเสร็จแล้ว!
+          <div className="bg-green-100 text-green-800 p-4 rounded-lg mb-5 font-semibold flex items-center justify-center gap-2">
+            <CheckCircle2 className="w-5 h-5" />
+            ทำเสร็จแล้ว!
           </div>
         )}
       </div>
 
-      {/* Navigation Buttons */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: '10px' }}>
+      <div className="flex flex-col sm:flex-row gap-3 mb-8">
         <button
           onClick={handlePrevious}
           disabled={currentIndex === 0}
-          className="button button-secondary"
-          style={{ 
-            opacity: currentIndex === 0 ? 0.5 : 1,
-            cursor: currentIndex === 0 ? 'not-allowed' : 'pointer'
-          }}
+          className="button button-secondary flex items-center justify-center gap-2 py-2.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none sm:w-auto"
         >
-          ← ก่อนหน้า
+          <ChevronLeft className="w-4 h-4" />
+          ก่อนหน้า
         </button>
 
         {isLast ? (
           <button
             onClick={handleComplete}
             disabled={saving}
-            className="button"
-            style={{ 
-              background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-              fontSize: '1.1rem',
-              fontWeight: 'bold'
-            }}
+            className="button bg-gradient-to-r from-teal-500 to-green-500 flex items-center justify-center gap-2 py-2.5 text-sm flex-1"
           >
-            {saving ? 'กำลังบันทึก...' : '✅ เสร็จสิ้น - บันทึกรายวัน'}
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                กำลังบันทึก...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                เสร็จสิ้น - บันทึกรายวัน
+              </>
+            )}
           </button>
         ) : (
-          <button
-            onClick={handleNext}
-            className="button"
-            style={{ fontSize: '1.1rem', fontWeight: 'bold' }}
-          >
-            {isCompleted ? '➡️ ท่าถัดไป' : '✅ ทำเสร็จ - ถัดไป'}
-          </button>
-        )}
-
-        {!isLast && (
-          <button
-            onClick={handleSkip}
-            className="button button-secondary"
-            style={{ fontSize: '0.9rem' }}
-          >
-            ข้าม →
-          </button>
+          <>
+            <button
+              onClick={handleNext}
+              className="button flex items-center justify-center gap-2 py-2.5 text-sm flex-1"
+            >
+              {isCompleted ? (
+                <>
+                  <ChevronRight className="w-4 h-4" />
+                  ท่าถัดไป
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4" />
+                  ทำเสร็จ - ถัดไป
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleSkip}
+              className="button button-secondary flex items-center justify-center gap-2 text-sm py-2.5 flex-1 sm:flex-none sm:w-auto"
+            >
+              ข้าม
+              <SkipForward className="w-4 h-4" />
+            </button>
+          </>
         )}
       </div>
 
-      {/* Exercise List Preview */}
-      <div style={{ marginTop: '40px', padding: '20px', background: '#f8f9fa', borderRadius: '12px' }}>
-        <h3 style={{ marginBottom: '15px', color: '#333', fontSize: '1.1rem' }}>
-          รายการท่าทั้งหมด:
-        </h3>
-        <div style={{ display: 'grid', gap: '8px' }}>
+      <div className="p-5 bg-gray-50 rounded-xl">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">รายการท่าทั้งหมด:</h3>
+        <div className="space-y-2">
           {exercises.map((ex, idx) => (
             <div
               key={ex.id}
-              style={{
-                padding: '10px',
-                background: idx === currentIndex ? '#667eea' : 'white',
-                color: idx === currentIndex ? 'white' : '#333',
-                borderRadius: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                fontSize: '0.9rem',
-                border: idx === currentIndex ? '2px solid #764ba2' : '1px solid #e0e0e0'
-              }}
+              className={`p-3 rounded-lg flex items-center gap-3 text-sm transition-colors ${
+                idx === currentIndex
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-white text-gray-800 border border-gray-200'
+              }`}
             >
-              <span style={{ fontWeight: 'bold', minWidth: '30px' }}>
-                {idx + 1}.
-              </span>
-              <span style={{ flex: 1 }}>{ex.name}</span>
+              <span className="font-bold min-w-[30px]">{idx + 1}.</span>
+              <span className="flex-1">{ex.name}</span>
               {completedExercises.has(ex.id) && (
-                <span style={{ fontSize: '1.2rem' }}>✅</span>
+                <CheckCircle2 className={`w-5 h-5 ${idx === currentIndex ? 'text-white' : 'text-green-600'}`} />
               )}
               {idx === currentIndex && !completedExercises.has(ex.id) && (
-                <span style={{ fontSize: '1.2rem' }}>👈</span>
+                <ArrowLeft className="w-5 h-5" />
               )}
             </div>
           ))}

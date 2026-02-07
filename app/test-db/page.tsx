@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import { Database, CheckCircle2, XCircle, ArrowLeft, Loader2, AlertCircle } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 export default function TestDB() {
   const [results, setResults] = useState<any>({})
@@ -15,7 +16,6 @@ export default function TestDB() {
   const testConnection = async () => {
     const testResults: any = {}
 
-    // Test 1: เชื่อมต่อ Supabase
     try {
       const { data, error } = await supabase.from('exercises').select('count').limit(1)
       testResults.connection = error ? { success: false, error: error.message } : { success: true }
@@ -23,7 +23,6 @@ export default function TestDB() {
       testResults.connection = { success: false, error: err.message }
     }
 
-    // Test 2: ตรวจสอบตาราง exercises
     try {
       const { data, error } = await supabase.from('exercises').select('*').limit(1)
       testResults.exercises = error 
@@ -33,7 +32,6 @@ export default function TestDB() {
       testResults.exercises = { success: false, error: err.message, exists: false }
     }
 
-    // Test 3: ตรวจสอบตาราง daily_logs
     try {
       const { data, error } = await supabase.from('daily_logs').select('*').limit(1)
       testResults.daily_logs = error 
@@ -43,7 +41,6 @@ export default function TestDB() {
       testResults.daily_logs = { success: false, error: err.message, exists: false }
     }
 
-    // Test 4: ตรวจสอบตาราง workouts
     try {
       const { data, error } = await supabase.from('workouts').select('*').limit(1)
       testResults.workouts = error 
@@ -53,7 +50,6 @@ export default function TestDB() {
       testResults.workouts = { success: false, error: err.message, exists: false }
     }
 
-    // Test 5: ตรวจสอบฟิลด์ใน exercises
     try {
       const { data, error } = await supabase.from('exercises').select('id, name, reps_target, instructions, video_url').limit(1)
       if (error) throw error
@@ -75,7 +71,10 @@ export default function TestDB() {
   if (loading) {
     return (
       <div className="container">
-        <div className="loading">กำลังทดสอบการเชื่อมต่อ...</div>
+        <div className="loading flex items-center justify-center gap-2">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          กำลังทดสอบการเชื่อมต่อ...
+        </div>
       </div>
     )
   }
@@ -83,121 +82,168 @@ export default function TestDB() {
   return (
     <div className="container">
       <div className="header">
-        <h1>🔍 ทดสอบการเชื่อมต่อ Database</h1>
+        <h1 className="flex items-center justify-center gap-3">
+          <Database className="w-8 h-8 md:w-10 md:h-10" />
+          ทดสอบการเชื่อมต่อ Database
+        </h1>
       </div>
 
-      <Link href="/" style={{ display: 'inline-block', marginBottom: '20px', color: '#667eea' }}>
-        ← กลับหน้าหลัก
+      <Link href="/" className="back-link flex items-center gap-2">
+        <ArrowLeft className="w-4 h-4" />
+        กลับหน้าหลัก
       </Link>
 
-      <div style={{ display: 'grid', gap: '20px' }}>
-        {/* Connection Test */}
+      <div className="space-y-5">
         <div className="card">
-          <h3 style={{ marginBottom: '15px', color: '#333' }}>1. การเชื่อมต่อ Supabase</h3>
+          <h3 className="text-xl font-bold text-gray-800 mb-4">1. การเชื่อมต่อ Supabase</h3>
           {results.connection?.success ? (
-            <div style={{ color: '#3c3', fontWeight: '600' }}>✅ เชื่อมต่อสำเร็จ</div>
+            <div className="flex items-center gap-2 text-green-600 font-semibold">
+              <CheckCircle2 className="w-5 h-5" />
+              เชื่อมต่อสำเร็จ
+            </div>
           ) : (
             <div>
-              <div style={{ color: '#c33', fontWeight: '600', marginBottom: '10px' }}>❌ เชื่อมต่อไม่สำเร็จ</div>
-              <div style={{ color: '#666', fontSize: '0.9rem' }}>Error: {results.connection?.error}</div>
+              <div className="flex items-center gap-2 text-red-600 font-semibold mb-2">
+                <XCircle className="w-5 h-5" />
+                เชื่อมต่อไม่สำเร็จ
+              </div>
+              <div className="text-gray-600 text-sm">Error: {results.connection?.error}</div>
             </div>
           )}
         </div>
 
-        {/* Exercises Table */}
         <div className="card">
-          <h3 style={{ marginBottom: '15px', color: '#333' }}>2. ตาราง exercises</h3>
+          <h3 className="text-xl font-bold text-gray-800 mb-4">2. ตาราง exercises</h3>
           {results.exercises?.exists ? (
             <div>
-              <div style={{ color: '#3c3', fontWeight: '600', marginBottom: '10px' }}>✅ ตารางมีอยู่</div>
-              <div style={{ color: '#666' }}>จำนวนข้อมูล: {results.exercises.count}</div>
+              <div className="flex items-center gap-2 text-green-600 font-semibold mb-2">
+                <CheckCircle2 className="w-5 h-5" />
+                ตารางมีอยู่
+              </div>
+              <div className="text-gray-600">จำนวนข้อมูล: {results.exercises.count}</div>
             </div>
           ) : (
             <div>
-              <div style={{ color: '#c33', fontWeight: '600', marginBottom: '10px' }}>❌ ตารางไม่มีอยู่</div>
-              <div style={{ color: '#666', fontSize: '0.9rem', marginBottom: '10px' }}>Error: {results.exercises?.error}</div>
-              <div style={{ background: '#fff3cd', padding: '15px', borderRadius: '8px', fontSize: '0.9rem' }}>
-                <strong>วิธีแก้:</strong> รัน SQL schema จากไฟล์ <code>supabase-schema.sql</code> ใน Supabase SQL Editor
+              <div className="flex items-center gap-2 text-red-600 font-semibold mb-2">
+                <XCircle className="w-5 h-5" />
+                ตารางไม่มีอยู่
+              </div>
+              <div className="text-gray-600 text-sm mb-3">Error: {results.exercises?.error}</div>
+              <div className="bg-yellow-50 p-4 rounded-lg text-sm border-l-4 border-yellow-500">
+                <strong>วิธีแก้:</strong> รัน SQL schema จากไฟล์ <code className="bg-yellow-100 px-2 py-1 rounded">supabase-complete.sql</code> ใน Supabase SQL Editor
               </div>
             </div>
           )}
         </div>
 
-        {/* Daily Logs Table */}
         <div className="card">
-          <h3 style={{ marginBottom: '15px', color: '#333' }}>3. ตาราง daily_logs</h3>
+          <h3 className="text-xl font-bold text-gray-800 mb-4">3. ตาราง daily_logs</h3>
           {results.daily_logs?.exists ? (
             <div>
-              <div style={{ color: '#3c3', fontWeight: '600', marginBottom: '10px' }}>✅ ตารางมีอยู่</div>
-              <div style={{ color: '#666' }}>จำนวนข้อมูล: {results.daily_logs.count}</div>
+              <div className="flex items-center gap-2 text-green-600 font-semibold mb-2">
+                <CheckCircle2 className="w-5 h-5" />
+                ตารางมีอยู่
+              </div>
+              <div className="text-gray-600">จำนวนข้อมูล: {results.daily_logs.count}</div>
             </div>
           ) : (
             <div>
-              <div style={{ color: '#c33', fontWeight: '600', marginBottom: '10px' }}>❌ ตารางไม่มีอยู่</div>
-              <div style={{ color: '#666', fontSize: '0.9rem', marginBottom: '10px' }}>Error: {results.daily_logs?.error}</div>
-              <div style={{ background: '#fff3cd', padding: '15px', borderRadius: '8px', fontSize: '0.9rem' }}>
-                <strong>วิธีแก้:</strong> รัน SQL schema จากไฟล์ <code>supabase-schema.sql</code> ใน Supabase SQL Editor (ต้องรันส่วนที่เพิ่มตาราง daily_logs)
+              <div className="flex items-center gap-2 text-red-600 font-semibold mb-2">
+                <XCircle className="w-5 h-5" />
+                ตารางไม่มีอยู่
+              </div>
+              <div className="text-gray-600 text-sm mb-3">Error: {results.daily_logs?.error}</div>
+              <div className="bg-yellow-50 p-4 rounded-lg text-sm border-l-4 border-yellow-500">
+                <strong>วิธีแก้:</strong> รัน SQL schema จากไฟล์ <code className="bg-yellow-100 px-2 py-1 rounded">supabase-complete.sql</code> ใน Supabase SQL Editor
               </div>
             </div>
           )}
         </div>
 
-        {/* Workouts Table */}
         <div className="card">
-          <h3 style={{ marginBottom: '15px', color: '#333' }}>4. ตาราง workouts</h3>
+          <h3 className="text-xl font-bold text-gray-800 mb-4">4. ตาราง workouts</h3>
           {results.workouts?.exists ? (
             <div>
-              <div style={{ color: '#3c3', fontWeight: '600', marginBottom: '10px' }}>✅ ตารางมีอยู่</div>
-              <div style={{ color: '#666' }}>จำนวนข้อมูล: {results.workouts.count}</div>
+              <div className="flex items-center gap-2 text-green-600 font-semibold mb-2">
+                <CheckCircle2 className="w-5 h-5" />
+                ตารางมีอยู่
+              </div>
+              <div className="text-gray-600">จำนวนข้อมูล: {results.workouts.count}</div>
             </div>
           ) : (
             <div>
-              <div style={{ color: '#c33', fontWeight: '600', marginBottom: '10px' }}>❌ ตารางไม่มีอยู่</div>
-              <div style={{ color: '#666', fontSize: '0.9rem', marginBottom: '10px' }}>Error: {results.workouts?.error}</div>
+              <div className="flex items-center gap-2 text-red-600 font-semibold mb-2">
+                <XCircle className="w-5 h-5" />
+                ตารางไม่มีอยู่
+              </div>
+              <div className="text-gray-600 text-sm">Error: {results.workouts?.error}</div>
             </div>
           )}
         </div>
 
-        {/* Exercises Fields */}
         <div className="card">
-          <h3 style={{ marginBottom: '15px', color: '#333' }}>5. ฟิลด์ในตาราง exercises</h3>
+          <h3 className="text-xl font-bold text-gray-800 mb-4">5. ฟิลด์ในตาราง exercises</h3>
           {results.exercises_fields?.success ? (
             <div>
-              <div style={{ color: '#3c3', fontWeight: '600', marginBottom: '10px' }}>✅ ตรวจสอบฟิลด์</div>
-              <div style={{ marginTop: '10px', display: 'grid', gap: '5px' }}>
-                <div style={{ color: results.exercises_fields.has_reps_target ? '#3c3' : '#c33' }}>
-                  {results.exercises_fields.has_reps_target ? '✅' : '❌'} reps_target
+              <div className="flex items-center gap-2 text-green-600 font-semibold mb-4">
+                <CheckCircle2 className="w-5 h-5" />
+                ตรวจสอบฟิลด์
+              </div>
+              <div className="space-y-2">
+                <div className={`flex items-center gap-2 ${results.exercises_fields.has_reps_target ? 'text-green-600' : 'text-red-600'}`}>
+                  {results.exercises_fields.has_reps_target ? (
+                    <CheckCircle2 className="w-5 h-5" />
+                  ) : (
+                    <XCircle className="w-5 h-5" />
+                  )}
+                  reps_target
                 </div>
-                <div style={{ color: results.exercises_fields.has_instructions ? '#3c3' : '#c33' }}>
-                  {results.exercises_fields.has_instructions ? '✅' : '❌'} instructions
+                <div className={`flex items-center gap-2 ${results.exercises_fields.has_instructions ? 'text-green-600' : 'text-red-600'}`}>
+                  {results.exercises_fields.has_instructions ? (
+                    <CheckCircle2 className="w-5 h-5" />
+                  ) : (
+                    <XCircle className="w-5 h-5" />
+                  )}
+                  instructions
                 </div>
-                <div style={{ color: results.exercises_fields.has_video_url ? '#3c3' : '#c33' }}>
-                  {results.exercises_fields.has_video_url ? '✅' : '❌'} video_url
+                <div className={`flex items-center gap-2 ${results.exercises_fields.has_video_url ? 'text-green-600' : 'text-red-600'}`}>
+                  {results.exercises_fields.has_video_url ? (
+                    <CheckCircle2 className="w-5 h-5" />
+                  ) : (
+                    <XCircle className="w-5 h-5" />
+                  )}
+                  video_url
                 </div>
               </div>
               {(!results.exercises_fields.has_reps_target || !results.exercises_fields.has_instructions || !results.exercises_fields.has_video_url) && (
-                <div style={{ background: '#fff3cd', padding: '15px', borderRadius: '8px', fontSize: '0.9rem', marginTop: '15px' }}>
+                <div className="bg-yellow-50 p-4 rounded-lg text-sm border-l-4 border-yellow-500 mt-4">
                   <strong>วิธีแก้:</strong> ต้องรัน SQL schema ใหม่เพื่อเพิ่มฟิลด์เหล่านี้ หรือ ALTER TABLE exercises
                 </div>
               )}
             </div>
           ) : (
             <div>
-              <div style={{ color: '#c33', fontWeight: '600', marginBottom: '10px' }}>❌ ไม่สามารถตรวจสอบได้</div>
-              <div style={{ color: '#666', fontSize: '0.9rem' }}>Error: {results.exercises_fields?.error}</div>
+              <div className="flex items-center gap-2 text-red-600 font-semibold mb-2">
+                <XCircle className="w-5 h-5" />
+                ไม่สามารถตรวจสอบได้
+              </div>
+              <div className="text-gray-600 text-sm">Error: {results.exercises_fields?.error}</div>
             </div>
           )}
         </div>
       </div>
 
-      <div style={{ marginTop: '30px', padding: '20px', background: '#e7f3ff', borderRadius: '12px' }}>
-        <h3 style={{ marginBottom: '15px', color: '#333' }}>📋 ขั้นตอนการแก้ไข</h3>
-        <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
+      <div className="mt-8 p-6 bg-blue-50 rounded-xl border-l-4 border-blue-500">
+        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <AlertCircle className="w-5 h-5" />
+          ขั้นตอนการแก้ไข
+        </h3>
+        <ol className="list-decimal list-inside space-y-2 text-gray-700">
           <li>ไปที่ <strong>Supabase Dashboard</strong> → <strong>SQL Editor</strong></li>
-          <li>เปิดไฟล์ <code>supabase-schema.sql</code> และคัดลอก SQL ทั้งหมด</li>
+          <li>เปิดไฟล์ <code className="bg-blue-100 px-2 py-1 rounded">supabase-complete.sql</code> และคัดลอก SQL ทั้งหมด</li>
           <li>วางใน SQL Editor และกด <strong>Run</strong></li>
           <li>ถ้าตารางมีอยู่แล้ว ให้รันเฉพาะส่วนที่เพิ่มตาราง/ฟิลด์ใหม่</li>
-          <li>รันไฟล์ <code>supabase-seed-data.sql</code> เพื่อเพิ่มข้อมูลท่าทั้ง 10 ท่า</li>
+          <li>รันไฟล์ <code className="bg-blue-100 px-2 py-1 rounded">supabase-complete.sql</code> เพื่อเพิ่มข้อมูลท่าทั้ง 10 ท่า</li>
           <li>รีเฟรชหน้านี้เพื่อตรวจสอบอีกครั้ง</li>
         </ol>
       </div>
