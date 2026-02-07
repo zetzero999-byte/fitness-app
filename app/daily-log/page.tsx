@@ -1,0 +1,224 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+
+interface DailyLog {
+  id: string
+  date: string
+  completed: boolean
+  notes: string | null
+  created_at: string
+}
+
+export default function DailyLog() {
+  const [logs, setLogs] = useState<DailyLog[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [notes, setNotes] = useState('')
+
+  useEffect(() => {
+    fetchLogs()
+  }, [])
+
+  const fetchLogs = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('daily_logs')
+        .select('*')
+        .order('date', { ascending: false })
+        .limit(30)
+
+      if (error) throw error
+      setLogs(data || [])
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+    setSuccess(false)
+
+    try {
+      const { error } = await supabase
+        .from('daily_logs')
+        .upsert({
+          date: selectedDate,
+          completed: true,
+          notes: notes || null,
+        }, {
+          onConflict: 'date'
+        })
+
+      if (error) throw error
+
+      setSuccess(true)
+      setNotes('')
+      setSelectedDate(new Date().toISOString().split('T')[0])
+      fetchLogs()
+
+      setTimeout(() => setSuccess(false), 3000)
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const deleteLog = async (id: string) => {
+    if (!confirm('คุณต้องการลบบันทึกนี้หรือไม่?')) return
+
+    try {
+      const { error } = await supabase
+        .from('daily_logs')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+      fetchLogs()
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  const isDateCompleted = (date: string) => {
+    return logs.some(log => log.date === date && log.completed)
+  }
+
+  return (
+    <div className="container">
+      <div className="header">
+        <h1>📅 บันทึกรายวัน</h1>
+        <p>บันทึกว่าวันนี้ออกกำลังกายเสร็จแล้ว</p>
+      </div>
+
+      <Link href="/" style={{ display: 'inline-block', marginBottom: '20px', color: '#667eea' }}>
+        ← กลับหน้าหลัก
+      </Link>
+
+      {error && <div className="error">เกิดข้อผิดพลาด: {error}</div>}
+      {success && <div className="success">บันทึกสำเร็จ! 🎉</div>}
+
+      <div className="card" style={{ marginBottom: '30px' }}>
+        <h3 style={{ marginBottom: '20px', color: '#333' }}>บันทึกการออกกำลังกาย</h3>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>วันที่ *</label>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              required
+              max={new Date().toISOString().split('T')[0]}
+            />
+            {isDateCompleted(selectedDate) && (
+              <p style={{ color: '#3c3', marginTop: '5px', fontSize: '0.9rem' }}>
+                ✓ บันทึกแล้วสำหรับวันนี้
+              </p>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label>หมายเหตุ (ไม่บังคับ)</label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              placeholder="เช่น รู้สึกดีมาก, รู้สึกเหนื่อย, ทำครบทุกท่า..."
+            />
+          </div>
+
+          <button type="submit" className="button" disabled={saving}>
+            {saving ? 'กำลังบันทึก...' : '✅ บันทึกว่าออกกำลังกายเสร็จแล้ว'}
+          </button>
+        </form>
+      </div>
+
+      <div>
+        <h2 style={{ marginBottom: '20px', color: '#333' }}>ประวัติการบันทึก</h2>
+
+        {loading ? (
+          <div className="loading">กำลังโหลด...</div>
+        ) : logs.length === 0 ? (
+          <div className="empty-state">
+            <h3>ยังไม่มีบันทึก</h3>
+            <p>เริ่มต้นด้วยการบันทึกการออกกำลังกายวันแรกของคุณ!</p>
+          </div>
+        ) : (
+          <div>
+            {logs.map((log) => (
+              <div key={log.id} className="card">
+                <div className="card-header">
+                  <div>
+                    <div className="card-title">
+                      ✅ {new Date(log.date).toLocaleDateString('th-TH', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        weekday: 'long',
+                      })}
+                    </div>
+                    {log.notes && (
+                      <p style={{ color: '#666', marginTop: '10px' }}>💬 {log.notes}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => deleteLog(log.id)}
+                    className="button button-danger"
+                    style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                  >
+                    ลบ
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ marginTop: '30px', padding: '20px', background: '#f0f0f0', borderRadius: '12px' }}>
+          <h3 style={{ marginBottom: '15px', color: '#333' }}>📊 สถิติ</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#667eea' }}>
+                {logs.length}
+              </div>
+              <div style={{ color: '#666' }}>วันทั้งหมด</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#3c3' }}>
+                {logs.filter(log => {
+                  const logDate = new Date(log.date)
+                  const today = new Date()
+                  const thisWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+                  return logDate >= thisWeek
+                }).length}
+              </div>
+              <div style={{ color: '#666' }}>สัปดาห์นี้</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#764ba2' }}>
+                {logs.filter(log => {
+                  const logDate = new Date(log.date)
+                  const today = new Date()
+                  const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+                  return logDate >= thisMonth
+                }).length}
+              </div>
+              <div style={{ color: '#666' }}>เดือนนี้</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
