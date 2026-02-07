@@ -52,7 +52,9 @@ export default function Workout() {
   const handleNext = () => {
     const currentExercise = exercises[currentIndex]
     if (currentExercise) {
-      setCompletedExercises(new Set([...completedExercises, currentExercise.id]))
+      const newSet = new Set(completedExercises)
+      newSet.add(currentExercise.id)
+      setCompletedExercises(newSet)
     }
 
     if (currentIndex < exercises.length - 1) {
